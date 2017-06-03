@@ -6,9 +6,21 @@ node_js:
   - "6"
   - "5"
   - "4"
+  
+env:
+  - CXX="g++-4.8"
 
-after_script:
-  - npm run coveralls
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+      - gcc-4.8
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install libzmq3-dev
 
 notifications:
   email:

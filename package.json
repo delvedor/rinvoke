@@ -14,7 +14,7 @@
     "rpc",
     "zmq",
     "remote"
-  ]
+  ],
   "author": "Tomas Della Vedova - @delvedor (http://delved.org)",
   "license": "MIT",
   "bugs": {
