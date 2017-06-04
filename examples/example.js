@@ -4,7 +4,7 @@ const server = require('./lib/server')()
 const client = require('./lib/client')()
 
 // register a new function
-server.register('cmd:concat', (a, b, reply) => reply(a + b))
+server.register('cmd:concat', (a, b, reply) => reply(null, a + b))
 
 // run the listener
 server.run('tcp://127.0.0.1:3030', err => {
@@ -13,7 +13,8 @@ server.run('tcp://127.0.0.1:3030', err => {
   // connect to the listener
   client.connect('tcp://127.0.0.1:3030')
   // invoke the remote function
-  client.invoke('cmd:concat', 'a', 'b', res => {
+  client.invoke('cmd:concat', 'a', 'b', (err, res) => {
+    if (err) console.log(err)
     console.log('concat:', res)
     // close the connections
     server.close()
