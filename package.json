@@ -29,6 +29,7 @@
     "zmq": "^2.15.3"
   },
   "devDependencies": {
+    "msgpack5": "^3.4.1",
     "standard": "^10.0.2",
     "tap": "^10.3.3"
   }
