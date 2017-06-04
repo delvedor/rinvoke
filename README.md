@@ -12,7 +12,7 @@ npm i rinvoke --save
 ```
 
 ## Usage
-*Work in progress, check out the [example](https://github.com/delvedor/rinvoke/blob/master/example.js).*
+*Work in progress, check out the [example](https://github.com/delvedor/rinvoke/blob/master/examples/example.js).*
 
 <a name="acknowledgements"></a>
 ## Acknowledgements
