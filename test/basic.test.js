@@ -57,3 +57,12 @@ test('should register a function and reply to the request', t => {
     })
   })
 })
+
+test('async await support', t => {
+  if (Number(process.versions.node[0]) >= 8) {
+    require('./async-await')(t.test)
+  } else {
+    t.pass('Skip because Node version < 8')
+  }
+  t.end()
+})
