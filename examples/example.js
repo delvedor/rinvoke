@@ -1,7 +1,7 @@
 'use strict'
 
-const server = require('./lib/server')()
-const client = require('./lib/client')()
+const server = require('../lib/server')()
+const client = require('../lib/client')()
 
 // register a new function
 server.register('cmd:concat', (a, b, reply) => reply(null, a + b))
