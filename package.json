@@ -3,6 +3,9 @@
   "version": "0.3.0",
   "description": "RPC library based on ZeroMQ.",
   "main": "lib/server.js",
+  "bin": {
+    "rinvoke": "./lib/bin.js"
+  },
   "scripts": {
     "test": "standard && tap test/*.test.js"
   },
@@ -25,6 +28,7 @@
     "avvio": "^0.6.1",
     "bloomrun": "^3.0.4",
     "hyperid": "^1.2.0",
+    "minimist": "^1.2.0",
     "tinysonic": "^1.2.0",
     "zmq": "^2.15.3"
   },
