@@ -99,6 +99,8 @@ server.serializer(JSON.stringify)
 
 - `.close`: close the connection with the server
 
+- `.disconnect`: disconnect from the server
+
 <a name="cli"></a>
 ## CLI
 You can even run the server with the integrated cli!
