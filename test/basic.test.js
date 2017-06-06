@@ -20,11 +20,12 @@ test('server methods', t => {
 })
 
 test('client methods', t => {
-  t.plan(6)
+  t.plan(7)
   const client = Client()
   t.ok(client.connect)
   t.ok(client.invoke)
   t.ok(client.close)
+  t.ok(client.disconnect)
   t.ok(client.parser)
   t.ok(client.errorParser)
   t.ok(client.serializer)
