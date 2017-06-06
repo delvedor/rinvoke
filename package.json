@@ -1,8 +1,8 @@
 {
   "name": "rinvoke",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "RPC library based on ZeroMQ.",
-  "main": "lib/server.js",
+  "main": "./server.js",
   "bin": {
     "rinvoke": "./lib/bin.js"
   },
