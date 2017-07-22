@@ -1,12 +1,25 @@
 'use strict'
 
-const test = require('tap').test
+const t = require('tap')
+const beforeEach = t.beforeEach
+const test = t.test
 const Server = require('../lib/server')
 const Client = require('../lib/client')
+const getPort = require('./get-port')
+
+var port = 0
+
+beforeEach(done => {
+  getPort((err, p) => {
+    if (err) throw err
+    port = p
+    done()
+  })
+})
 
 test('reply should send errors', t => {
   t.plan(4)
-  const addr = 'tcp://127.0.0.1:3030'
+  const addr = 'tcp://127.0.0.1:' + port
   const server = Server()
 
   server.register('cmd:concat', function (a, b, reply) {

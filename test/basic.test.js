@@ -1,8 +1,21 @@
 'use strict'
 
-const test = require('tap').test
+const t = require('tap')
+const beforeEach = t.beforeEach
+const test = t.test
 const Server = require('../lib/server')
 const Client = require('../lib/client')
+const getPort = require('./get-port')
+
+var port = 0
+
+beforeEach(done => {
+  getPort((err, p) => {
+    if (err) throw err
+    port = p
+    done()
+  })
+})
 
 test('server methods', t => {
   t.plan(10)
@@ -34,7 +47,7 @@ test('client methods', t => {
 
 test('should register a function and reply to the request', t => {
   t.plan(7)
-  const addr = 'tcp://127.0.0.1:3030'
+  const addr = 'tcp://127.0.0.1:' + port
   const server = Server()
 
   server.register('cmd:concat', (a, b, reply) => {
@@ -61,7 +74,7 @@ test('should register a function and reply to the request', t => {
 
 test('should register a function and reply to the request - error', t => {
   t.plan(4)
-  const addr = 'tcp://127.0.0.1:3030'
+  const addr = 'tcp://127.0.0.1:' + port
   const server = Server()
 
   server.errorSerializer(e => e.message)
@@ -87,7 +100,7 @@ test('should register a function and reply to the request - error', t => {
 
 test('should register a function and reply to the request (promises - resolve)', t => {
   t.plan(4)
-  const addr = 'tcp://127.0.0.1:3030'
+  const addr = 'tcp://127.0.0.1:' + port
   const server = Server()
 
   server.register('cmd:concat', (a, b, reply) => {
@@ -114,7 +127,7 @@ test('should register a function and reply to the request (promises - resolve)',
 
 test('should register a function and reply to the request (promises - reject)', t => {
   t.plan(4)
-  const addr = 'tcp://127.0.0.1:3030'
+  const addr = 'tcp://127.0.0.1:' + port
   const server = Server()
 
   server.errorSerializer(e => e.message)
@@ -143,7 +156,7 @@ test('should register a function and reply to the request (promises - reject)', 
 
 test('async await support', t => {
   if (Number(process.versions.node[0]) >= 8) {
-    require('./async-await')(t.test)
+    require('./async-await')(t.test, port)
   } else {
     t.pass('Skip because Node version < 8')
   }

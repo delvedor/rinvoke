@@ -1,13 +1,26 @@
 'use strict'
 
-const test = require('tap').test
+const t = require('tap')
+const beforeEach = t.beforeEach
+const test = t.test
 const Server = require('../lib/server')
 const Client = require('../lib/client')
 const msgpack = require('msgpack5')()
+const getPort = require('./get-port')
+
+var port = 0
+
+beforeEach(done => {
+  getPort((err, p) => {
+    if (err) throw err
+    port = p
+    done()
+  })
+})
 
 test('use msgpack5 as custom serializer/parser', t => {
   t.plan(5)
-  const addr = 'tcp://127.0.0.1:3030'
+  const addr = 'tcp://127.0.0.1:' + port
   const payload = { hello: 'world' }
   const server = Server()
 
@@ -38,7 +51,7 @@ test('use msgpack5 as custom serializer/parser', t => {
 
 test('use JSON as custom serializer/parser', t => {
   t.plan(5)
-  const addr = 'tcp://127.0.0.1:3030'
+  const addr = 'tcp://127.0.0.1:' + port
   const payload = { hello: 'world' }
   const server = Server()
 

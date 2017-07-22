@@ -4,10 +4,10 @@ const Server = require('../lib/server')
 const Client = require('../lib/client')
 const sleep = require('then-sleep')
 
-function asyncTest (test) {
+function asyncTest (test, port) {
   test('should support async await', t => {
     t.plan(6)
-    const addr = 'tcp://127.0.0.1:3030'
+    const addr = 'tcp://127.0.0.1:' + port
     const server = Server()
 
     server.register('cmd:concat', async (a, b) => {
