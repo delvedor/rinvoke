@@ -1,7 +1,7 @@
 # rinvoke
 
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-  [![Build Status](https://travis-ci.org/delvedor/rinvoke.svg?branch=master)](https://travis-ci.org/delvedor/rinvoke)  ![stability](https://img.shields.io/badge/stability-experimental-orange.svg)
+  [![Build Status](https://travis-ci.org/delvedor/rinvoke.svg?branch=master)](https://travis-ci.org/delvedor/rinvoke)  ![stability](https://img.shields.io/badge/stability-experimental-orange.svg) [![Coverage Status](https://coveralls.io/repos/github/delvedor/rinvoke/badge.svg?branch=master)](https://coveralls.io/github/delvedor/rinvoke?branch=master)
 
 
   RPC library based on [ZeroMQ](http://zeromq.org/).
