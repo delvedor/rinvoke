@@ -7,7 +7,8 @@
     "rinvoke": "./lib/bin.js"
   },
   "scripts": {
-    "test": "standard && tap test/*.test.js"
+    "test": "standard && tap test/*.test.js",
+    "coveralls": "tap test/*.test.js --cov --coverage-report=text-lcov | coveralls"
   },
   "repository": {
     "type": "git",
@@ -25,7 +26,7 @@
   },
   "homepage": "https://github.com/delvedor/rinvoke#readme",
   "dependencies": {
-    "avvio": "^0.6.1",
+    "avvio": "^2.0.3",
     "bloomrun": "^3.0.4",
     "hyperid": "^1.2.0",
     "minimist": "^1.2.0",
@@ -33,9 +34,10 @@
     "zmq": "^2.15.3"
   },
   "devDependencies": {
-    "msgpack5": "^3.4.1",
+    "coveralls": "^2.13.1",
+    "msgpack5": "^3.5.0",
     "standard": "^10.0.2",
-    "tap": "^10.3.3",
+    "tap": "^10.7.0",
     "then-sleep": "^1.0.1"
   }
 }
