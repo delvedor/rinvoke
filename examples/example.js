@@ -17,7 +17,7 @@ server.run('tcp://127.0.0.1:3030', err => {
     if (err) console.log(err)
     console.log('concat:', res)
     // close the connections
-    server.close()
+    server.close(err => { if (err) throw err })
     client.close()
   })
 })
