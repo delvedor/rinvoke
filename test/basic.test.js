@@ -59,6 +59,88 @@ test('should register a function and reply to the request', t => {
   })
 })
 
+test('should register a function and reply to the request - error', t => {
+  t.plan(4)
+  const addr = 'tcp://127.0.0.1:3030'
+  const server = Server()
+
+  server.errorSerializer(e => e.message)
+
+  server.register('cmd:concat', (a, b, reply) => {
+    reply(new Error('some error'), null)
+  })
+
+  server.run(addr, err => {
+    t.error(err)
+
+    const client = Client()
+
+    client.connect(addr)
+    client.invoke('cmd:concat', 'a', 'b', (err, res) => {
+      t.equal(err, 'some error')
+      t.equal(res, 'null')
+      client.close()
+      server.close(t.error)
+    })
+  })
+})
+
+test('should register a function and reply to the request (promises - resolve)', t => {
+  t.plan(4)
+  const addr = 'tcp://127.0.0.1:3030'
+  const server = Server()
+
+  server.register('cmd:concat', (a, b, reply) => {
+    const p = new Promise((resolve, reject) => {
+      resolve(a + b)
+    })
+    return p
+  })
+
+  server.run(addr, err => {
+    t.error(err)
+
+    const client = Client()
+
+    client.connect(addr)
+    client.invoke('cmd:concat', 'a', 'b', (err, res) => {
+      t.error(err)
+      t.equal(res, 'ab')
+      client.close()
+      server.close(t.error)
+    })
+  })
+})
+
+test('should register a function and reply to the request (promises - reject)', t => {
+  t.plan(4)
+  const addr = 'tcp://127.0.0.1:3030'
+  const server = Server()
+
+  server.errorSerializer(e => e.message)
+
+  server.register('cmd:concat', (a, b, reply) => {
+    const p = new Promise((resolve, reject) => {
+      reject(new Error('some error'))
+    })
+    return p
+  })
+
+  server.run(addr, err => {
+    t.error(err)
+
+    const client = Client()
+
+    client.connect(addr)
+    client.invoke('cmd:concat', 'a', 'b', (err, res) => {
+      t.equal(err, 'some error')
+      t.equal(res, 'null')
+      client.close()
+      server.close(t.error)
+    })
+  })
+})
+
 test('async await support', t => {
   if (Number(process.versions.node[0]) >= 8) {
     require('./async-await')(t.test)
