@@ -5,7 +5,7 @@ const Server = require('../lib/server')
 const Client = require('../lib/client')
 
 test('server methods', t => {
-  t.plan(9)
+  t.plan(10)
   const server = Server()
   t.ok(server.run)
   t.ok(server.register)
@@ -16,7 +16,7 @@ test('server methods', t => {
   t.ok(server.use)
   t.ok(server.ready)
   t.ok(server.after)
-  server.close()
+  server.close(t.error)
 })
 
 test('client methods', t => {
@@ -33,7 +33,7 @@ test('client methods', t => {
 })
 
 test('should register a function and reply to the request', t => {
-  t.plan(6)
+  t.plan(7)
   const addr = 'tcp://127.0.0.1:3030'
   const server = Server()
 
@@ -54,7 +54,7 @@ test('should register a function and reply to the request', t => {
       t.error(err)
       t.equal(res, 'ab')
       client.close()
-      server.close()
+      server.close(t.error)
     })
   })
 })

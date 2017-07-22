@@ -5,7 +5,7 @@ const Client = require('../lib/client')
 const cli = require('../lib/bin')
 
 test('cli single function', t => {
-  t.plan(2)
+  t.plan(3)
 
   cli.start({
     protocol: 'tcp',
@@ -20,13 +20,13 @@ test('cli single function', t => {
       t.error(err)
       t.equal(res, 'hello!')
       client.close()
-      server.close()
+      server.close(t.error)
     })
   })
 })
 
 test('cli extended', t => {
-  t.plan(2)
+  t.plan(3)
 
   cli.start({
     protocol: 'tcp',
@@ -41,7 +41,7 @@ test('cli extended', t => {
       t.error(err)
       t.equal(res, JSON.stringify({ hello: 'world' }))
       client.close()
-      server.close()
+      server.close(t.error)
     })
   })
 })

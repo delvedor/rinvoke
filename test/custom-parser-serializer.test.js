@@ -6,7 +6,7 @@ const Client = require('../lib/client')
 const msgpack = require('msgpack5')()
 
 test('use msgpack5 as custom serializer/parser', t => {
-  t.plan(4)
+  t.plan(5)
   const addr = 'tcp://127.0.0.1:3030'
   const payload = { hello: 'world' }
   const server = Server()
@@ -31,13 +31,13 @@ test('use msgpack5 as custom serializer/parser', t => {
       t.error(err)
       t.same(res, { hello: 'world' })
       client.close()
-      server.close()
+      server.close(t.error)
     })
   })
 })
 
 test('use JSON as custom serializer/parser', t => {
-  t.plan(4)
+  t.plan(5)
   const addr = 'tcp://127.0.0.1:3030'
   const payload = { hello: 'world' }
   const server = Server()
@@ -62,7 +62,7 @@ test('use JSON as custom serializer/parser', t => {
       t.error(err)
       t.same(res, payload)
       client.close()
-      server.close()
+      server.close(t.error)
     })
   })
 })

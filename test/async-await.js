@@ -6,7 +6,7 @@ const sleep = require('then-sleep')
 
 function asyncTest (test) {
   test('should support async await', t => {
-    t.plan(5)
+    t.plan(6)
     const addr = 'tcp://127.0.0.1:3030'
     const server = Server()
 
@@ -27,7 +27,7 @@ function asyncTest (test) {
         t.error(err)
         t.equal(res, 'ab')
         client.close()
-        server.close()
+        server.close(t.error)
       })
     })
   })

@@ -5,7 +5,7 @@ const Server = require('../lib/server')
 const Client = require('../lib/client')
 
 test('use can add methods to the instance', t => {
-  t.plan(5)
+  t.plan(6)
   const addr = 'tcp://127.0.0.1:3030'
   const server = Server()
 
@@ -30,13 +30,13 @@ test('use can add methods to the instance', t => {
       t.error(err)
       t.equal(res, 'ab')
       client.close()
-      server.close()
+      server.close(t.error)
     })
   })
 })
 
 test('close event', t => {
-  t.plan(1)
+  t.plan(2)
   const server = Server()
 
   server
@@ -47,6 +47,6 @@ test('close event', t => {
       next()
     })
     .after(() => {
-      server.close()
+      server.close(t.error)
     })
 })

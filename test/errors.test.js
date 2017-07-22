@@ -5,7 +5,7 @@ const Server = require('../lib/server')
 const Client = require('../lib/client')
 
 test('reply should send errors', t => {
-  t.plan(3)
+  t.plan(4)
   const addr = 'tcp://127.0.0.1:3030'
   const server = Server()
 
@@ -23,13 +23,13 @@ test('reply should send errors', t => {
       t.ok(err)
       t.equal(res, 'null')
       client.close()
-      server.close()
+      server.close(t.error)
     })
   })
 })
 
 test('server assertions', t => {
-  t.plan(6)
+  t.plan(7)
   const server = Server()
 
   try {
@@ -74,7 +74,7 @@ test('server assertions', t => {
     t.is(e.message, 'serializer must be a function')
   }
 
-  server.close()
+  server.close(t.error)
 })
 
 test('client assertions', t => {
