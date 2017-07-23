@@ -18,8 +18,7 @@ beforeEach(done => {
 })
 
 test('use can add methods to the instance', t => {
-  t.plan(6)
-  const addr = 'tcp://127.0.0.1:' + port
+  t.plan(7)
   const server = Server()
 
   server.use((instance, opts, next) => {
@@ -28,38 +27,41 @@ test('use can add methods to the instance', t => {
     next()
   })
 
-  server.register('cmd:concat', function (a, b, reply) {
+  server.register('concat', function (req, reply) {
     t.ok(this.concat)
-    reply(null, this.concat(a, b))
+    reply(null, this.concat(req.a, req.b))
   })
 
-  server.run(addr, err => {
+  server.listen(port, err => {
     t.error(err)
 
-    const client = Client()
+    const client = Client({ port })
 
-    client.connect(addr)
-    client.invoke('cmd:concat', 'a', 'b', (err, res) => {
+    client.invoke({
+      procedure: 'concat',
+      a: 'a',
+      b: 'b'
+    }, (err, res) => {
       t.error(err)
       t.equal(res, 'ab')
-      client.close()
+      client.close(t.error)
       server.close(t.error)
     })
   })
 })
 
 test('close event', t => {
-  t.plan(2)
+  t.plan(1)
   const server = Server()
 
   server
     .use((instance, opts, next) => {
-      instance.on('close', i => {
+      instance.onClose(i => {
         t.ok(i instanceof Server)
       })
       next()
     })
     .after(() => {
-      server.close(t.error)
+      server.close()
     })
 })
