@@ -26,6 +26,6 @@ test('server assertions', t => {
     server.listen(null)
     t.fail()
   } catch (e) {
-    t.is(e.message, 'port should be a number')
+    t.is(e.message, 'portOrPath should be a number or a string')
   }
 })
