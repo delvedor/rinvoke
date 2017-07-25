@@ -1,10 +1,11 @@
 # rinvoke
 
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-  [![Build Status](https://travis-ci.org/delvedor/rinvoke.svg?branch=master)](https://travis-ci.org/delvedor/rinvoke)  ![stability](https://img.shields.io/badge/stability-experimental-orange.svg) [![Coverage Status](https://coveralls.io/repos/github/delvedor/rinvoke/badge.svg?branch=master)](https://coveralls.io/github/delvedor/rinvoke?branch=master)
+  [![Build Status](https://travis-ci.org/delvedor/rinvoke.svg?branch=master)](https://travis-ci.org/delvedor/rinvoke)  [![Coverage Status](https://coveralls.io/repos/github/delvedor/rinvoke/badge.svg?branch=master)](https://coveralls.io/github/delvedor/rinvoke?branch=master)  ![stability](https://img.shields.io/badge/stability-experimental-orange.svg)
 
 
-  RPC library based on [ZeroMQ](http://zeromq.org/).
+RPC library based on net sockets, can work both with **tcp sockets** and **ipc**.  
+Internally uses [tentacoli](https://github.com/mcollina/tentacoli) to multiplex the requests and [avvio](https://github.com/mcollina/avvio) to guarantee the asynchronous bootstrap of the application.
 
 ## Install
 ```
@@ -16,22 +17,24 @@ Declare one or more function and run the server.
 ```js
 const server = require('rinvoke/server')()
 // register a new function
-server.register('cmd:concat', (a, b, reply) => reply(null, a + b))
-
+server.register('concat', (req, reply) => reply(null, req.a + req.b))
 // run the listener
-server.run('tcp://127.0.0.1:3030', err => {
+server.run(3030, err => {
   if (err) throw err
 })
 ```
 Then declare a client to call the function:
 ```js
-const client = require('rinvoke/client')()
-// connect to the remote server
-client.connect('tcp://127.0.0.1:3030')
+const client = require('rinvoke/client')({
+  port: 3030
+})
 // invoke the remote function
-client.invoke('cmd:concat', 'a', 'b', (err, res) => {
-  if (err) console.log(err)
-  console.log('concat:', res)
+client.invoke({
+  procedure: 'concat',
+  a: 'a',
+  b: 'b'
+}, (err, result) => {
+  console.log(err || result)
 })
 ```
 
@@ -39,33 +42,44 @@ Async await is supported as well!
 ```js
 const server = require('rinvoke/server')()
 // register a new function
-server.register('cmd:concat', async (a, b) => {
+server.register('concat', async (req, reply) => {
   const val = await something()
-  return a + b
+  return req.a + req.b
 })
-
 // run the listener
-server.run('tcp://127.0.0.1:3030', err => {
+server.run(3030, err => {
   if (err) throw err
 })
 ```
 
+Promises are also supported!
+```js
+const client = require('rinvoke/client')({
+  port: 3030
+})
+// invoke the remote function
+client
+  .invoke({
+    procedure: 'concat',
+    a: 'a',
+    b: 'b'
+  })
+  .then(console.log)
+  .catch(console.log)
+```
+
+Checkout the [examples folder](https://github.com/delvedor/rinvoke/tree/master/examples) if you want to see more examples!
+
 <a name="api"></a>
 ## API
 ### Server
-- `.register`: declare a new function, the internal routing is done by [bloomrun](https://github.com/mcollina/bloomrun), you can use the [tinysonic](https://github.com/mcollina/tinysonic) syntax to declare new routes.
+- `.register`: declare a new function, the api takes two parameter, the procedure name and the function to execute.  
+The function to execute will get two parameter, the `request` object and the reply function.
 
-- `.run`: run the server on the specified url
-
-- `.parser`: use a custom parser, by default only strings are handled:
-```js
-server.parser(JSON.parse)
-```
-- `.serializer`: use a custom serializer, by default only strings are handled:
-```js
-server.serializer(JSON.stringify)
-```
-- `.errorSerializer`: use a custom serializer for errors, by default is handled with JSON
+- `.listen`: run the server on the specified port or path.  
+  - `port`: port where start the **tcp** server
+  - `address`: custom address for the server (default to `127.0.0.1`)
+  - `path`: path where start the **ipc** server
 
 - `.close`: close the server
 
@@ -75,31 +89,30 @@ server.use((instance, opts, next) => {
     instance.concat = (a, b) => a + b
     next()
 })
-server.register('cmd:concat', function (a, b, reply) {
+server.register('concat', function (req, reply) {
     reply(null, this.concat(a, b))
 })
 ```
-You can also use it to handle a connection with a database, listen for the `'close'` event if you need to shutdown the connection.
+You can also use it to handle a connection with a database, and use the `onClose` api if you need to shutdown the connection.
 
+#### Server option
+- `codec`: object with two properties: `encode` and `decode`, defines which serializer/parser use, default to `JSON.stringify` and  `JSON.parse`
 
 ### Client
-- `.invoke`: invoke a remote function, pass the parameters as single values and a callback at the end.
-
-- `.connect`: connect to a remote server
-
-- `.parser`: use a custom parser, by default only strings are handled:
-```js
-server.parser(JSON.parse)
-```
-- `.serializer`: use a custom serializer, by default only strings are handled:
-```js
-server.serializer(JSON.stringify)
-```
-- `.errorSerializer`: use a custom serializer for errors, by default is handled with JSON
+- `.invoke`: invoke a remote function, take two parameters, the `request` object and a callback.  
+The request object **must** include the `procedure` field, which is the name of the function to call server side.
 
 - `.close`: close the connection with the server
 
-- `.disconnect`: disconnect from the server
+- `.onClose`: same as above
+
+- `.use`: same as above
+
+#### Client option
+- `port`: port where start the **tcp** server
+- `address`: custom address for the server (default to `127.0.0.1`)
+- `path`: path where start the **ipc** server
+- `codec`: object with two properties: `encode` and `decode`, defines which serializer/parser use, default to `JSON.stringify` and  `JSON.parse`
 
 <a name="cli"></a>
 ## CLI
@@ -121,11 +134,7 @@ module.exports.key = 'hello'
 You can also use an extended version of the above example:
 ```js
 function sayHello (rinvoke, opts, next) {
-  rinvoke
-    .serializer(JSON.stringify)
-    .parser(JSON.parse)
-
-  rinvoke.register('hello', reply => {
+  rinvoke.register('hello', (req, reply) => {
     reply(null, { hello: 'world' })
   })
 
@@ -138,8 +147,13 @@ The options of the cli are:
 ```
 --port       # default 3000
 --address    # default 127.0.0.1
---protocol   # default tcp
+--path
 ```
+
+<a name="todo"></a>
+## TODO
+- [ ] Rewrite the documentation
+- [ ] More test
 
 <a name="acknowledgements"></a>
 ## Acknowledgements
@@ -149,6 +163,6 @@ This project is kindly sponsored by [LetzDoIt](http://www.letzdoitapp.com/).
 <a name="license"></a>
 ## License
 
-*The software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and non infringement. In no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.*
+[MIT](./LICENSE)
 
 Copyright © 2017 Tomas Della Vedova
