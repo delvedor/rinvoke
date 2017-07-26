@@ -1,5 +1,9 @@
 'use strict'
 
-const rinvoke = require('../index')()
+const rinvoke = require('../server')()
 
-rinvoke.register('cmd:concat', (a, b, reply) => reply(null, a + b))
+rinvoke.register('concat', (req, reply) => reply(null, req.a + req.b))
+
+rinvoke.listen(3030, err => {
+  if (err) throw err
+})

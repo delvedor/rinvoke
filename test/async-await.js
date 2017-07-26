@@ -6,27 +6,29 @@ const sleep = require('then-sleep')
 
 function asyncTest (test, port) {
   test('should support async await', t => {
-    t.plan(6)
-    const addr = 'tcp://127.0.0.1:' + port
+    t.plan(7)
     const server = Server()
 
-    server.register('cmd:concat', async (a, b) => {
-      t.equal(a, 'a')
-      t.equal(b, 'b')
+    server.register('concat', async req => {
+      t.equal(req.a, 'a')
+      t.equal(req.b, 'b')
       await sleep(200)
-      return a + b
+      return req.a + req.b
     })
 
-    server.run(addr, err => {
+    server.listen(port, err => {
       t.error(err)
 
-      const client = Client()
+      const client = Client({ port })
 
-      client.connect(addr)
-      client.invoke('cmd:concat', 'a', 'b', (err, res) => {
+      client.invoke({
+        procedure: 'concat',
+        a: 'a',
+        b: 'b'
+      }, (err, res) => {
         t.error(err)
         t.equal(res, 'ab')
-        client.close()
+        client.close(t.error)
         server.close(t.error)
       })
     })

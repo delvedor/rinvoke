@@ -3,8 +3,14 @@
 const server = require('../lib/server')()
 const Client = require('../lib/client')
 
+server.use((instance, opts, next) => {
+  instance.concat = (a, b) => a + b
+  next()
+})
 // register a new function
-server.register('concat', (req, reply) => reply(null, req.a + req.b))
+server.register('concat', (req, reply) => {
+  reply(null, server.concat(req.a, req.b))
+})
 
 // run the listener
 server.listen(3030, err => {

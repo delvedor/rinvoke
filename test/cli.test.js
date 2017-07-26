@@ -18,42 +18,38 @@ beforeEach(done => {
 })
 
 test('cli single function', t => {
-  t.plan(3)
+  t.plan(4)
 
   cli.start({
-    protocol: 'tcp',
-    address: '127.0.0.1',
+    host: '127.0.0.1',
     port: port,
     _: ['./examples/cli-single-function.js']
   }, server => {
-    const client = Client()
+    const client = Client({ port })
 
-    client.connect('tcp://127.0.0.1:' + port)
-    client.invoke('hello', (err, res) => {
+    client.invoke({ procedure: 'hello' }, (err, res) => {
       t.error(err)
       t.equal(res, 'hello!')
-      client.close()
+      client.close(t.error)
       server.close(t.error)
     })
   })
 })
 
 test('cli extended', t => {
-  t.plan(3)
+  t.plan(4)
 
   cli.start({
-    protocol: 'tcp',
-    address: '127.0.0.1',
+    host: '127.0.0.1',
     port: port,
     _: ['./examples/cli-extended.js']
   }, server => {
-    const client = Client()
+    const client = Client({ port })
 
-    client.connect('tcp://127.0.0.1:' + port)
-    client.invoke('hello', (err, res) => {
+    client.invoke({ procedure: 'hello' }, (err, res) => {
       t.error(err)
-      t.equal(res, JSON.stringify({ hello: 'world' }))
-      client.close()
+      t.deepEqual(res, { hello: 'world' })
+      client.close(t.error)
       server.close(t.error)
     })
   })

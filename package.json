@@ -27,11 +27,11 @@
   "homepage": "https://github.com/delvedor/rinvoke#readme",
   "dependencies": {
     "avvio": "^2.0.3",
-    "bloomrun": "^3.0.4",
-    "hyperid": "^1.2.0",
+    "debug": "^2.6.8",
     "minimist": "^1.2.0",
-    "tinysonic": "^1.2.0",
-    "zmq": "^2.15.3"
+    "pump": "^1.0.2",
+    "tentacoli": "^0.6.1",
+    "util.promisify": "^1.0.0"
   },
   "devDependencies": {
     "coveralls": "^2.13.1",

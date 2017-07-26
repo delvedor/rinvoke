@@ -19,62 +19,29 @@ beforeEach(done => {
 })
 
 test('use msgpack5 as custom serializer/parser', t => {
-  t.plan(5)
-  const addr = 'tcp://127.0.0.1:' + port
-  const payload = { hello: 'world' }
-  const server = Server()
-
-  server.serializer(msgpack.encode)
-  server.parser(msgpack.decode)
-  server.register('hello', function (data, reply) {
-    t.same(data, payload)
-    reply(null, data)
+  t.plan(6)
+  const payload = { procedure: 'hello', hello: 'world' }
+  const server = Server({
+    codec: msgpack
   })
 
-  server.run(addr, err => {
+  server.register('hello', function (req, reply) {
+    t.deepEqual(req, payload)
+    reply(null, req)
+  })
+
+  server.listen(port, err => {
     t.error(err)
 
-    const client = Client()
-
-    client.connect(addr)
-    client.serializer(msgpack.encode)
-    client.parser(msgpack.decode)
-
-    client.invoke('hello', payload, (err, res) => {
-      t.error(err)
-      t.same(res, { hello: 'world' })
-      client.close()
-      server.close(t.error)
+    const client = Client({
+      port: port,
+      codec: msgpack
     })
-  })
-})
 
-test('use JSON as custom serializer/parser', t => {
-  t.plan(5)
-  const addr = 'tcp://127.0.0.1:' + port
-  const payload = { hello: 'world' }
-  const server = Server()
-
-  server.serializer(JSON.stringify)
-  server.parser(JSON.parse)
-  server.register('cmd:concat', (data, reply) => {
-    t.same(data, payload)
-    reply(null, data)
-  })
-
-  server.run(addr, err => {
-    t.error(err)
-
-    const client = Client()
-
-    client.connect(addr)
-    client.serializer(JSON.stringify)
-    client.parser(JSON.parse)
-
-    client.invoke('cmd:concat', payload, (err, res) => {
+    client.invoke(payload, (err, res) => {
       t.error(err)
-      t.same(res, payload)
-      client.close()
+      t.deepEqual(res, payload)
+      client.close(t.error)
       server.close(t.error)
     })
   })

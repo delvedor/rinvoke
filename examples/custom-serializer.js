@@ -1,6 +1,9 @@
 'use strict'
 
-const server = require('../lib/server')()
+const msgpack = require('msgpack5')()
+const server = require('../lib/server')({
+  codec: msgpack
+})
 const Client = require('../lib/client')
 
 // register a new function
@@ -11,7 +14,10 @@ server.listen(3030, err => {
   if (err) throw err
 
   // connect to the listener
-  const client = Client({ port: 3030 })
+  const client = Client({
+    port: 3030,
+    codec: msgpack
+  })
   // invoke the remote function
   client.invoke({
     procedure: 'concat',

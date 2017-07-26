@@ -1,8 +1,8 @@
 'use strict'
 
-function sayHello (reply) {
+function sayHello (req, reply) {
   reply(null, 'hello!')
 }
 
 module.exports = sayHello
-module.exports.key = 'hello'
+module.exports.procedure = 'hello'

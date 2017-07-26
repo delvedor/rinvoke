@@ -11,7 +11,13 @@ server.listen(3030, err => {
   if (err) throw err
 
   // connect to the listener
-  const client = Client({ port: 3030 })
+  const client = Client({
+    port: 3030,
+    reconnect: { // could be also true
+      attempts: 3,
+      timeout: 1000
+    }
+  })
   // invoke the remote function
   client.invoke({
     procedure: 'concat',

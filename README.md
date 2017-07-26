@@ -1,108 +1,197 @@
 # rinvoke
 
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-  [![Build Status](https://travis-ci.org/delvedor/rinvoke.svg?branch=master)](https://travis-ci.org/delvedor/rinvoke)  ![stability](https://img.shields.io/badge/stability-experimental-orange.svg) [![Coverage Status](https://coveralls.io/repos/github/delvedor/rinvoke/badge.svg?branch=master)](https://coveralls.io/github/delvedor/rinvoke?branch=master)
+  [![Build Status](https://travis-ci.org/delvedor/rinvoke.svg?branch=master)](https://travis-ci.org/delvedor/rinvoke)  [![Coverage Status](https://coveralls.io/repos/github/delvedor/rinvoke/badge.svg?branch=master)](https://coveralls.io/github/delvedor/rinvoke?branch=master)  ![stability](https://img.shields.io/badge/stability-experimental-orange.svg)
 
 
-  RPC library based on [ZeroMQ](http://zeromq.org/).
+RPC library based on net sockets, can work both with **tcp sockets** and **ipc**.  
+It has built in reconnect logic and supports multiple parser/serializers, such as [msgpack](http://msgpack.org/) or [protbuf](https://developers.google.com/protocol-buffers/).  
+Internally uses [tentacoli](https://github.com/mcollina/tentacoli) to multiplex the requests and [avvio](https://github.com/mcollina/avvio) to guarantee the asynchronous bootstrap of the application.
 
+<a name="install"></a>
 ## Install
 ```
 npm i rinvoke --save
 ```
 
+<a name="usage"></a>
 ## Usage
-Declare one or more function and run the server.
+Rinvoke could be used as a server or client, so when your require it you must specify it.  
+Let's see an example for the server:
 ```js
-const server = require('rinvoke/server')()
-// register a new function
-server.register('cmd:concat', (a, b, reply) => reply(null, a + b))
+const rinvoke = require('rinvoke/server')()
 
-// run the listener
-server.run('tcp://127.0.0.1:3030', err => {
+rinvoke.register('concat', (req, reply) => {
+  reply(null, req.a + req.b)
+})
+
+rinvoke.listen(3000, err => {
   if (err) throw err
 })
 ```
-Then declare a client to call the function:
+And now for the client:
 ```js
-const client = require('rinvoke/client')()
-// connect to the remote server
-client.connect('tcp://127.0.0.1:3030')
-// invoke the remote function
-client.invoke('cmd:concat', 'a', 'b', (err, res) => {
-  if (err) console.log(err)
-  console.log('concat:', res)
-})
-```
-
-Async await is supported as well!
-```js
-const server = require('rinvoke/server')()
-// register a new function
-server.register('cmd:concat', async (a, b) => {
-  const val = await something()
-  return a + b
+const rinvoke = require('rinvoke/client')({
+  port: 3000
 })
 
-// run the listener
-server.run('tcp://127.0.0.1:3030', err => {
-  if (err) throw err
+rinvoke.invoke({
+  procedure: 'concat',
+  a: 'hello ',
+  b: 'world'
+}, (err, result) => {
+  if (err) {
+    console.log(err)
+    return
+  }
+  console.log(result)
 })
 ```
+The client could seem synchronous but internally everything is handled asynchronously with events.  
+Checkout the [examples folder](https://github.com/delvedor/rinvoke/tree/master/examples) if you want to see more examples!
 
 <a name="api"></a>
 ## API
+
+<a name="server"></a>
 ### Server
-- `.register`: declare a new function, the internal routing is done by [bloomrun](https://github.com/mcollina/bloomrun), you can use the [tinysonic](https://github.com/mcollina/tinysonic) syntax to declare new routes.
-
-- `.run`: run the server on the specified url
-
-- `.parser`: use a custom parser, by default only strings are handled:
+#### `server([opts])`
+Instance a new server, the options object can accept a custom parser/serializer via the `codec` field.
 ```js
-server.parser(JSON.parse)
-```
-- `.serializer`: use a custom serializer, by default only strings are handled:
-```js
-server.serializer(JSON.stringify)
-```
-- `.errorSerializer`: use a custom serializer for errors, by default is handled with JSON
-
-- `.close`: close the server
-
-- `.use`: add an utility to the instance, it can be an object or a function, under the hood uses [avvio](https://github.com/mcollina/avvio).
-```js
-server.use((instance, opts, next) => {
-    instance.concat = (a, b) => a + b
-    next()
-})
-server.register('cmd:concat', function (a, b, reply) {
-    reply(null, this.concat(a, b))
+const rinvoke = require('rinvoke/server')({
+  codec: {
+    encode: JSON.stringify,
+    decode: JSON.parse
+  }
 })
 ```
-You can also use it to handle a connection with a database, listen for the `'close'` event if you need to shutdown the connection.
+The default codec is *JSON*.  
+**Events**:
+- `'connection'`
+- `'error'`
 
+#### `register(procedureName, procedureFunction)`
+Registers a new procedure, the name of the procedure must be a string, the function has the following signature: `(request, reply)` where `request` is the request object and `reply` a function t send the response back to the client.
+```js
+rinvoke.register('concat', (req, reply) => {
+  reply(null, req.a + req.b)
+})
+```
+*Promises* and *async/await* are supported as well!
+```js
+rinvoke.register('concat', async req => {
+  return req.a + req.b
+})
+```
 
+#### `listen(portOrPath, [address], callback)`
+Run the server over the specified `port` (and `address`, default to `127.0.0.1`), if you specify a path (as a string)
+ it will use the system socket to perform ipc.
+ ```js
+ rinvoke.listen(3000, err => {
+   if (err) throw err
+ })
+
+ rinvoke.listen(3000, '127.0.0.1', err => {
+   if (err) throw err
+ })
+
+ rinvoke.listen('/tmp/socket.sock', err => {
+   if (err) throw err
+ })
+ ```
+
+<a name="client"></a>
 ### Client
-- `.invoke`: invoke a remote function, pass the parameters as single values and a callback at the end.
 
-- `.connect`: connect to a remote server
-
-- `.parser`: use a custom parser, by default only strings are handled:
+#### `client(options)`
+Instance a new client, the options object must contain a `port` or `path` field, furthermore can accept a custom parser/serializer via the `codec` field. If you want to activate the automatic reconnection handling pass `reconnect: true` (3 attempts with 1s timeout), if you want to configure the timeout handling pass an object like the following:
 ```js
-server.parser(JSON.parse)
+const rinvoke = require('rinvoke/client')({
+  port: 3000,
+  reconnect: {
+    attempts: 5,
+    timeout: 2000
+  },
+  codec: {
+    encode: JSON.stringify,
+    decode: JSON.parse
+  }
+})
 ```
-- `.serializer`: use a custom serializer, by default only strings are handled:
+The default codec is *JSON*.  
+**Events**:
+- `'connect'`
+- `'error'`
+- `'close'`
+- `'timeout'`
+
+#### `invoke(request, callback)`
+Invoke a procedure on the server, the request object **must** contain the key `procedure` with the name of the function to call.  
+The callback is a function with the following signature: `(error, response)`.
 ```js
-server.serializer(JSON.stringify)
+rinvoke.invoke({
+  procedure: 'concat',
+  a: 'hello ',
+  b: 'world'
+}, (err, result) => {
+  if (err) {
+    console.log(err)
+    return
+  }
+  console.log(result)
+})
 ```
-- `.errorSerializer`: use a custom serializer for errors, by default is handled with JSON
+*Promises* are supported as well!
+```js
+rinvoke
+  .invoke({
+    procedure: 'concat',
+    a: 'a',
+    b: 'b'
+  })
+  .then(console.log)
+  .catch(console.log)
+```
 
-- `.close`: close the connection with the server
+#### `timeout(time)`
+Sets the timeout of the socket.
+#### `keepAlive(bool)`
+Sets the `keep-alive` property.
 
-- `.disconnect`: disconnect from the server
+<a name="shared"></a>
+### Method for both client and server
+#### `use(callback)`
+The callback is a function witb the following signature: `instance, options, next`.  
+Where `instance` is the client instance, options, is an options object and  `next` a function you must call when your code is ready.  
+This api is useful if you need to load an utility, a database connection for example. `use` will guarantee the load order an that your client/server will boot up once every `use` has completed.
+```js
+rinvoke.use((instance, opts, next) => {
+  dbClient.connect(opts.url, (err, conn) => {
+    rinvoke.db = conn // now you can access in your function the database connection with `this.db`
+    next()
+  })
+})
+```
+#### `onClose(callback)`
+Hook that will be called once you fire the `close` callback.
+```js
+instance.onClose((instance, done) => {
+  // do something
+  done()
+})
+```
 
+#### `close(callback)`
+Once you call this function the socket server and client will close and all the registered functions with `onClose` will be called.
+```js
+instance.close((err, instance, done) => {
+  // do something
+  done()
+})
+```
 <a name="cli"></a>
-## CLI
+### CLI
 You can even run the server with the integrated cli!
 In your `package.json` add:
 ```json
@@ -121,11 +210,7 @@ module.exports.key = 'hello'
 You can also use an extended version of the above example:
 ```js
 function sayHello (rinvoke, opts, next) {
-  rinvoke
-    .serializer(JSON.stringify)
-    .parser(JSON.parse)
-
-  rinvoke.register('hello', reply => {
+  rinvoke.register('hello', (req, reply) => {
     reply(null, { hello: 'world' })
   })
 
@@ -138,8 +223,13 @@ The options of the cli are:
 ```
 --port       # default 3000
 --address    # default 127.0.0.1
---protocol   # default tcp
+--path
 ```
+
+<a name="todo"></a>
+## TODO
+- [ ] `request` event
+- [ ] Validation of `request` object
 
 <a name="acknowledgements"></a>
 ## Acknowledgements
@@ -149,6 +239,6 @@ This project is kindly sponsored by [LetzDoIt](http://www.letzdoitapp.com/).
 <a name="license"></a>
 ## License
 
-*The software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and non infringement. In no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.*
+[MIT](./LICENSE)
 
 Copyright © 2017 Tomas Della Vedova
