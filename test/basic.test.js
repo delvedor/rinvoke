@@ -190,6 +190,71 @@ test('should register a function and reply to the request (promises - reject)', 
   })
 })
 
+test('client should set timeout and keep alive', t => {
+  t.plan(8)
+  const server = Server()
+
+  server.register('concat', (req, reply) => {
+    t.equal(req.a, 'a')
+    t.equal(req.b, 'b')
+    t.is(typeof reply, 'function')
+    reply(null, req.a + req.b)
+  })
+
+  server.listen(port, err => {
+    t.error(err)
+
+    const client = Client({ port })
+
+    client.timeout(500)
+    client.keepAlive(true)
+
+    client.invoke({
+      procedure: 'concat',
+      a: 'a',
+      b: 'b'
+    }, (err, res) => {
+      t.error(err)
+      t.equal(res, 'ab')
+      client.close(t.error)
+      server.close(t.error)
+    })
+  })
+})
+
+test('client should set timeout and keep alive / 2', t => {
+  t.plan(8)
+  const server = Server()
+
+  server.register('concat', (req, reply) => {
+    t.equal(req.a, 'a')
+    t.equal(req.b, 'b')
+    t.is(typeof reply, 'function')
+    reply(null, req.a + req.b)
+  })
+
+  server.listen(port, err => {
+    t.error(err)
+
+    const client = Client({ port })
+
+    client.invoke({
+      procedure: 'concat',
+      a: 'a',
+      b: 'b'
+    }, (err, res) => {
+      t.error(err)
+      t.equal(res, 'ab')
+
+      client.timeout(500)
+      client.keepAlive(true)
+
+      client.close(t.error)
+      server.close(t.error)
+    })
+  })
+})
+
 test('async await support', t => {
   if (Number(process.versions.node[0]) >= 8) {
     require('./async-await')(t.test, port)
