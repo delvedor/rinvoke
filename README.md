@@ -5,60 +5,146 @@
 
 
 RPC library based on net sockets, can work both with **tcp sockets** and **ipc**.  
+It has built in reconnect logic and supports multiple parser/serializers, such as [msgpack](http://msgpack.org/) or [protbuf](https://developers.google.com/protocol-buffers/).  
 Internally uses [tentacoli](https://github.com/mcollina/tentacoli) to multiplex the requests and [avvio](https://github.com/mcollina/avvio) to guarantee the asynchronous bootstrap of the application.
 
+<a name="install"></a>
 ## Install
 ```
 npm i rinvoke --save
 ```
 
+<a name="usage"></a>
 ## Usage
-Declare one or more function and run the server.
+Rinvoke could be used as a server or client, so when your require it you must specify it.  
+Let's see an example for the server:
 ```js
-const server = require('rinvoke/server')()
-// register a new function
-server.register('concat', (req, reply) => reply(null, req.a + req.b))
-// run the listener
-server.run(3030, err => {
+const rinvoke = require('rinvoke/server')()
+
+rinvoke.register('concat', (req, reply) => {
+  reply(null, req.a + req.b)
+})
+
+rinvoke.listen(3000, err => {
   if (err) throw err
 })
 ```
-Then declare a client to call the function:
+And now for the client:
 ```js
-const client = require('rinvoke/client')({
-  port: 3030
+const rinvoke = require('rinvoke/client')({
+  port: 3000
 })
-// invoke the remote function
-client.invoke({
+
+rinvoke.invoke({
   procedure: 'concat',
-  a: 'a',
-  b: 'b'
+  a: 'hello ',
+  b: 'world'
 }, (err, result) => {
-  console.log(err || result)
+  if (err) {
+    console.log(err)
+    return
+  }
+  console.log(result)
 })
 ```
+The client could seem synchronous but internally everything is handled asynchronously with events.  
+Checkout the [examples folder](https://github.com/delvedor/rinvoke/tree/master/examples) if you want to see more examples!
 
-Async await is supported as well!
+<a name="api"></a>
+## API
+
+<a name="server"></a>
+### Server
+#### `server([opts])`
+Instance a new server, the options object can accept a custom parser/serializer via the `codec` field.
 ```js
-const server = require('rinvoke/server')()
-// register a new function
-server.register('concat', async (req, reply) => {
-  const val = await something()
+const rinvoke = require('rinvoke/server')({
+  codec: {
+    encode: JSON.stringify,
+    decode: JSON.parse
+  }
+})
+```
+The default codec is *JSON*.  
+**Events**:
+- `'connection'`
+- `'error'`
+
+#### `register(procedureName, procedureFunction)`
+Registers a new procedure, the name of the procedure must be a string, the function has the following signature: `(request, reply)` where `request` is the request object and `reply` a function t send the response back to the client.
+```js
+rinvoke.register('concat', (req, reply) => {
+  reply(null, req.a + req.b)
+})
+```
+*Promises* and *async/await* are supported as well!
+```js
+rinvoke.register('concat', async req => {
   return req.a + req.b
 })
-// run the listener
-server.run(3030, err => {
-  if (err) throw err
-})
 ```
 
-Promises are also supported!
+#### `listen(portOrPath, [address], callback)`
+Run the server over the specified `port` (and `address`, default to `127.0.0.1`), if you specify a path (as a string)
+ it will use the system socket to perform ipc.
+ ```js
+ rinvoke.listen(3000, err => {
+   if (err) throw err
+ })
+
+ rinvoke.listen(3000, '127.0.0.1', err => {
+   if (err) throw err
+ })
+
+ rinvoke.listen('/tmp/socket.sock', err => {
+   if (err) throw err
+ })
+ ```
+
+<a name="client"></a>
+### Client
+
+#### `client(options)`
+Instance a new client, the options object must contain a `port` or `path` field, furthermore can accept a custom parser/serializer via the `codec` field. If you want to activate the automatic reconnection handling pass `reconnect: true` (3 attempts with 1s timeout), if you want to configure the timeout handling pass an object like the following:
 ```js
-const client = require('rinvoke/client')({
-  port: 3030
+const rinvoke = require('rinvoke/client')({
+  port: 3000,
+  reconnect: {
+    attempts: 5,
+    timeout: 2000
+  },
+  codec: {
+    encode: JSON.stringify,
+    decode: JSON.parse
+  }
 })
-// invoke the remote function
-client
+```
+The default codec is *JSON*.  
+**Events**:
+- `'connect'`
+- `'error'`
+- `'close'`
+- `'timeout'`
+
+#### `invoke(request, callback)`
+Invoke a procedure on the server, the request object **must** contain the key `procedure` with the name of the function to call.  
+The callback is a function with the following signature: `(error, response)`.
+```js
+rinvoke.invoke({
+  procedure: 'concat',
+  a: 'hello ',
+  b: 'world'
+}, (err, result) => {
+  if (err) {
+    console.log(err)
+    return
+  }
+  console.log(result)
+})
+```
+*Promises* are supported as well!
+```js
+rinvoke
   .invoke({
     procedure: 'concat',
     a: 'a',
@@ -68,54 +154,44 @@ client
   .catch(console.log)
 ```
 
-Checkout the [examples folder](https://github.com/delvedor/rinvoke/tree/master/examples) if you want to see more examples!
+#### `timeout(time)`
+Sets the timeout of the socket.
+#### `keepAlive(bool)`
+Sets the `keep-alive` property.
 
-<a name="api"></a>
-## API
-### Server
-- `.register`: declare a new function, the api takes two parameter, the procedure name and the function to execute.  
-The function to execute will get two parameter, the `request` object and the reply function.
-
-- `.listen`: run the server on the specified port or path.  
-  - `port`: port where start the **tcp** server
-  - `address`: custom address for the server (default to `127.0.0.1`)
-  - `path`: path where start the **ipc** server
-
-- `.close`: close the server
-
-- `.use`: add an utility to the instance, it can be an object or a function, under the hood uses [avvio](https://github.com/mcollina/avvio).
+<a name="shared"></a>
+### Method for both client and server
+#### `use(callback)`
+The callback is a function witb the following signature: `instance, options, next`.  
+Where `instance` is the client instance, options, is an options object and  `next` a function you must call when your code is ready.  
+This api is useful if you need to load an utility, a database connection for example. `use` will guarantee the load order an that your client/server will boot up once every `use` has completed.
 ```js
-server.use((instance, opts, next) => {
-    instance.concat = (a, b) => a + b
+rinvoke.use((instance, opts, next) => {
+  dbClient.connect(opts.url, (err, conn) => {
+    rinvoke.db = conn // now you can access in your function the database connection with `this.db`
     next()
-})
-server.register('concat', function (req, reply) {
-    reply(null, this.concat(a, b))
+  })
 })
 ```
-You can also use it to handle a connection with a database, and use the `onClose` api if you need to shutdown the connection.
+#### `onClose(callback)`
+Hook that will be called once you fire the `close` callback.
+```js
+instance.onClose((instance, done) => {
+  // do something
+  done()
+})
+```
 
-#### Server option
-- `codec`: object with two properties: `encode` and `decode`, defines which serializer/parser use, default to `JSON.stringify` and  `JSON.parse`
-
-### Client
-- `.invoke`: invoke a remote function, take two parameters, the `request` object and a callback.  
-The request object **must** include the `procedure` field, which is the name of the function to call server side.
-
-- `.close`: close the connection with the server
-
-- `.onClose`: same as above
-
-- `.use`: same as above
-
-#### Client option
-- `port`: port where start the **tcp** server
-- `address`: custom address for the server (default to `127.0.0.1`)
-- `path`: path where start the **ipc** server
-- `codec`: object with two properties: `encode` and `decode`, defines which serializer/parser use, default to `JSON.stringify` and  `JSON.parse`
-
+#### `close(callback)`
+Once you call this function the socket server and client will close and all the registered functions with `onClose` will be called.
+```js
+instance.close((err, instance, done) => {
+  // do something
+  done()
+})
+```
 <a name="cli"></a>
-## CLI
+### CLI
 You can even run the server with the integrated cli!
 In your `package.json` add:
 ```json
@@ -152,8 +228,8 @@ The options of the cli are:
 
 <a name="todo"></a>
 ## TODO
-- [ ] Rewrite the documentation
-- [ ] More test
+- [ ] `request` event
+- [ ] Validation of `request` object
 
 <a name="acknowledgements"></a>
 ## Acknowledgements
