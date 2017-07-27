@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/delvedor/rinvoke#readme",
   "dependencies": {
+    "ajv": "^5.2.2",
     "avvio": "^2.0.3",
     "debug": "^2.6.8",
     "minimist": "^1.2.0",

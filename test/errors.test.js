@@ -12,7 +12,7 @@ test('server assertions', t => {
     server.register(null, () => {})
     t.fail()
   } catch (e) {
-    t.is(e.message, 'key must be a string')
+    t.is(e.message, 'procedure must be a string')
   }
 
   try {
