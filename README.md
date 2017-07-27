@@ -69,8 +69,10 @@ The default codec is *JSON*.
 **Events**:
 - `'connection'`
 - `'error'`
+- `'request'`
+- `'listening'`
 
-#### `register(procedureName, procedureFunction)`
+#### `register(procedureName, [schema,] procedureFunction)`
 Registers a new procedure, the name of the procedure must be a string, the function has the following signature: `(request, reply)` where `request` is the request object and `reply` a function t send the response back to the client.
 ```js
 rinvoke.register('concat', (req, reply) => {
@@ -81,6 +83,22 @@ rinvoke.register('concat', (req, reply) => {
 ```js
 rinvoke.register('concat', async req => {
   return req.a + req.b
+})
+```
+<a name="validation"></a>
+#### Validation
+Rinvoke offers you out of the box a nice and standard way to validate your requests, [*JSON schema*](http://json-schema.org/)!  
+Internally uses [ajv](https://github.com/epoberezkin/ajv/blob/master/README.md) to achieve the maximum speed and correctness.
+```js
+rinvoke.register('concat', {
+  type: 'object',
+  properties: {
+    a: { type: 'string' },
+    b: { type: 'string' }
+  },
+  required: ['a', 'b']
+}, (req, reply) => {
+  reply(null, req.a + req.b)
 })
 ```
 
@@ -225,11 +243,6 @@ The options of the cli are:
 --address    # default 127.0.0.1
 --path
 ```
-
-<a name="todo"></a>
-## TODO
-- [ ] `request` event
-- [ ] Validation of `request` object
 
 <a name="acknowledgements"></a>
 ## Acknowledgements
