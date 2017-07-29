@@ -1,7 +1,7 @@
 {
   "name": "rinvoke",
   "version": "0.7.0",
-  "description": "RPC library based on ZeroMQ.",
+  "description": "RPC library based on net sockets, can work both with tcp sockets and ipc",
   "main": "./server.js",
   "bin": {
     "rinvoke": "./lib/bin.js"
@@ -16,8 +16,11 @@
   },
   "keywords": [
     "rpc",
-    "zmq",
-    "remote"
+    "tcp",
+    "ipc",
+    "function",
+    "remote",
+    "multiplex"
   ],
   "author": "Tomas Della Vedova - @delvedor (http://delved.org)",
   "license": "MIT",
