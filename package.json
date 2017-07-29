@@ -1,6 +1,6 @@
 {
   "name": "rinvoke",
-  "version": "0.7.0",
+  "version": "1.0.0",
   "description": "RPC library based on net sockets, can work both with tcp sockets and ipc",
   "main": "./server.js",
   "bin": {
