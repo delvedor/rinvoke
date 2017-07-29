@@ -23,6 +23,7 @@ test('cli single function', t => {
   cli.start({
     host: '127.0.0.1',
     port: port,
+    name: 'hello',
     _: ['./examples/cli-single-function.js']
   }, server => {
     const client = Client({ port })
