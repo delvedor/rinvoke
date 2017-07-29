@@ -292,3 +292,32 @@ test('listen should work even without a callback', t => {
     })
   })
 })
+
+test('should accept a port and an address', t => {
+  t.plan(7)
+  const server = Server()
+
+  server.register('concat', (req, reply) => {
+    t.equal(req.a, 'a')
+    t.equal(req.b, 'b')
+    t.is(typeof reply, 'function')
+    reply(null, req.a + req.b)
+  })
+
+  server.listen(port, '127.0.0.1')
+
+  server.on('listening', () => {
+    const client = Client({ port })
+
+    client.invoke({
+      procedure: 'concat',
+      a: 'a',
+      b: 'b'
+    }, (err, res) => {
+      t.error(err)
+      t.equal(res, 'ab')
+      client.close(t.error)
+      server.close(t.error)
+    })
+  })
+})
