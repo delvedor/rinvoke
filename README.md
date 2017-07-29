@@ -1,12 +1,12 @@
 # rinvoke
 
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-  [![Build Status](https://travis-ci.org/delvedor/rinvoke.svg?branch=master)](https://travis-ci.org/delvedor/rinvoke)  [![Coverage Status](https://coveralls.io/repos/github/delvedor/rinvoke/badge.svg?branch=master)](https://coveralls.io/github/delvedor/rinvoke?branch=master)  ![stability](https://img.shields.io/badge/stability-experimental-orange.svg)
+  [![Build Status](https://travis-ci.org/delvedor/rinvoke.svg?branch=master)](https://travis-ci.org/delvedor/rinvoke)  [![Coverage Status](https://coveralls.io/repos/github/delvedor/rinvoke/badge.svg?branch=master)](https://coveralls.io/github/delvedor/rinvoke?branch=master)
 
-
-RPC library based on net sockets, can work both with **tcp sockets** and **ipc**.  
+Build your distributed functions system with **Rinvoke**!  
+**Rinvoke** is a RPC library based on net sockets, can work both with **tcp sockets** and **ipc**.  
 It has built in reconnect logic and supports multiple parser/serializers, such as [msgpack](http://msgpack.org/) or [protbuf](https://developers.google.com/protocol-buffers/).  
-Internally uses [tentacoli](https://github.com/mcollina/tentacoli) to multiplex the requests and [avvio](https://github.com/mcollina/avvio) to guarantee the asynchronous bootstrap of the application.
+Internally uses [tentacoli](https://github.com/mcollina/tentacoli) to multiplex the requests and [avvio](https://github.com/mcollina/avvio) to guarantee the asynchronous bootstrap of the application, it also provide an handy request validation out of the box with [*JSON schema*](http://json-schema.org/).
 
 <a name="install"></a>
 ## Install
@@ -127,6 +127,7 @@ Instance a new client, the options object must contain a `port` or `path` field,
 ```js
 const rinvoke = require('rinvoke/client')({
   port: 3000,
+  address: '127.0.0.1'
   reconnect: {
     attempts: 5,
     timeout: 2000
@@ -186,7 +187,7 @@ This api is useful if you need to load an utility, a database connection for exa
 ```js
 rinvoke.use((instance, opts, next) => {
   dbClient.connect(opts.url, (err, conn) => {
-    rinvoke.db = conn // now you can access in your function the database connection with `this.db`
+    instance.db = conn // now you can access in your function the database connection with `this.db`
     next()
   })
 })
@@ -194,7 +195,7 @@ rinvoke.use((instance, opts, next) => {
 #### `onClose(callback)`
 Hook that will be called once you fire the `close` callback.
 ```js
-instance.onClose((instance, done) => {
+rinvoke.onClose((instance, done) => {
   // do something
   done()
 })
@@ -203,7 +204,7 @@ instance.onClose((instance, done) => {
 #### `close(callback)`
 Once you call this function the socket server and client will close and all the registered functions with `onClose` will be called.
 ```js
-instance.close((err, instance, done) => {
+rinvoke.close((err, instance, done) => {
   // do something
   done()
 })
@@ -221,10 +222,8 @@ In your `package.json` add:
 ```
 And then create your server file:
 ```js
-module.exports = async () => 'hello!'
-module.exports.key = 'hello'
+module.exports = async req => `Hello ${req.name}!`
 ```
-`key` is the key of your function.
 You can also use an extended version of the above example:
 ```js
 function sayHello (rinvoke, opts, next) {
@@ -239,9 +238,10 @@ module.exports = sayHello
 ```
 The options of the cli are:
 ```
---port       # default 3000
---address    # default 127.0.0.1
---path
+--port       -p      # default 3000
+--address    -a      # default 127.0.0.1
+--path       -P      # path of the ipc web socket
+--name       -n      # name of your exported function
 ```
 
 <a name="acknowledgements"></a>

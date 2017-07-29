@@ -5,4 +5,3 @@ function sayHello (req, reply) {
 }
 
 module.exports = sayHello
-module.exports.procedure = 'hello'
