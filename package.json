@@ -1,6 +1,6 @@
 {
   "name": "rinvoke",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "RPC library based on net sockets, can work both with tcp sockets and ipc",
   "main": "./server.js",
   "bin": {
@@ -20,7 +20,10 @@
     "ipc",
     "function",
     "remote",
-    "multiplex"
+    "multiplex",
+    "fire",
+    "forget",
+    "fire and forget"
   ],
   "author": "Tomas Della Vedova - @delvedor (http://delved.org)",
   "license": "MIT",
