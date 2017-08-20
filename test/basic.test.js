@@ -321,3 +321,82 @@ test('should accept a port and an address', t => {
     })
   })
 })
+
+test('fire and forget', t => {
+  t.plan(6)
+  const server = Server()
+  var client = null
+
+  server.register('concat', (req, reply) => {
+    t.equal(req.a, 'a')
+    t.equal(req.b, 'b')
+    t.is(typeof reply, 'function')
+    client.close(t.error)
+    server.close(t.error)
+  })
+
+  server.listen(port, err => {
+    t.error(err)
+
+    client = Client({ port })
+
+    client.fire({
+      procedure: 'concat',
+      a: 'a',
+      b: 'b'
+    })
+  })
+})
+
+test('fire and forget with cb', t => {
+  t.plan(7)
+  const server = Server()
+  var client = null
+
+  server.register('concat', (req, reply) => {
+    t.equal(req.a, 'a')
+    t.equal(req.b, 'b')
+    t.is(typeof reply, 'function')
+    client.close(t.error)
+    server.close(t.error)
+  })
+
+  server.listen(port, err => {
+    t.error(err)
+
+    client = Client({ port })
+
+    client.fire({
+      procedure: 'concat',
+      a: 'a',
+      b: 'b'
+    }, t.error)
+  })
+})
+
+test('fire and forget with cb, should not care abotu reply', t => {
+  t.plan(7)
+  const server = Server()
+  var client = null
+
+  server.register('concat', (req, reply) => {
+    t.equal(req.a, 'a')
+    t.equal(req.b, 'b')
+    t.is(typeof reply, 'function')
+    reply(new Error('kaboom'))
+    client.close(t.error)
+    server.close(t.error)
+  })
+
+  server.listen(port, err => {
+    t.error(err)
+
+    client = Client({ port })
+
+    client.fire({
+      procedure: 'concat',
+      a: 'a',
+      b: 'b'
+    }, t.error)
+  })
+})
