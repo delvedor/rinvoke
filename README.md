@@ -173,6 +173,18 @@ rinvoke
   .catch(console.log)
 ```
 
+#### `fire(request [, callback])`
+Fire (and forget) a procedure on the server, the request object **must** contain the key `procedure` with the name of the function to call.  
+The optional callback will be called if there is an error while sending the message, or after the message has been sent successfully.
+
+```js
+rinvoke.fire({
+  procedure: 'concat',
+  a: 'hello ',
+  b: 'world'
+})
+```
+
 #### `timeout(time)`
 Sets the timeout of the socket.
 #### `keepAlive(bool)`
